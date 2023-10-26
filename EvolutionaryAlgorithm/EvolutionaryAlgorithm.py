@@ -9,13 +9,14 @@ from Organism import Organism
 class EvolutionaryAlgorithm:
     fitness_per_epoch = []
 
-    def __init__(self, population, num_epochs, crossing_rate, mutation_rate, min_value, max_value):
+    def __init__(self, population, num_epochs, crossing_rate, mutation_rate, min_value, max_value, fitness_function):
         self.population = population
         self.num_epochs = num_epochs
         self.crossing_rate = crossing_rate
         self.mutation_rate = mutation_rate
         self.min_value = min_value
         self.max_value = max_value
+        self.fitness_function = fitness_function
         self.best_organism = None
 
     def reproduction(self):
@@ -55,8 +56,8 @@ class EvolutionaryAlgorithm:
                 if new_org2_decimal < self.min_value or new_org2_decimal > self.max_value:
                     new_org2_decimal = random.randint(self.min_value, self.max_value)
 
-                new_population.append(Organism(new_org1_decimal, self.max_value))
-                new_population.append(Organism(new_org2_decimal, self.max_value))
+                new_population.append(Organism(new_org1_decimal, self.max_value, self.fitness_function))
+                new_population.append(Organism(new_org2_decimal, self.max_value, self.fitness_function))
             else:
                 new_population.append(org1)
                 new_population.append(org2)
@@ -83,22 +84,34 @@ class EvolutionaryAlgorithm:
             if new_org_decimal < self.min_value or new_org_decimal > self.max_value:
                 new_org_decimal = random.randint(self.min_value, self.max_value)
 
-            new_population.append(Organism(new_org_decimal, self.max_value))
+            new_population.append(Organism(new_org_decimal, self.max_value, self.fitness_function))
 
         self.population.population = new_population
 
+    def find_best_organism(self, population):
+        best_organism = population[0]
+        best_fitness = population[0].calculate_fitness()
+
+        for org in population:
+            fitness =  org.calculate_fitness()
+            if fitness > best_fitness:
+                best_organism = org
+                best_fitness = fitness
+
+        return best_organism
+
     def run_evolution(self):
+        self.best_organism = self.find_best_organism(self.population.population)
         for epoch in range(self.num_epochs):
             self.reproduction()
             self.crossing()
             self.mutation()
             self.population.calculate_fitness()
 
-            current_maximum_fitness = self.population.maximum_fitness
-            current_best_organism = next(org for org in self.population.population if self.population.fitness_function(org.chromosome_decimal) == current_maximum_fitness)
+            best_in_population = self.find_best_organism(self.population.population)
 
-            if self.best_organism is None or self.population.fitness_function(self.best_organism.chromosome_decimal) < current_maximum_fitness:
-                self.best_organism = current_best_organism
+            if self.best_organism.calculate_fitness() <= best_in_population.calculate_fitness():
+                self.best_organism = best_in_population
 
             self.fitness_per_epoch.append({
                 "minimum_fitness": self.population.minimum_fitness,
@@ -123,7 +136,7 @@ CROSSING_RATE = 0.95
 MUTATION_RATE = 0.001
 
 population = Population(population_size=POPULATION_SIZE, num_epochs=NUM_OF_EPOCHS, min_value=MIN_VALUE, max_value=MAX_VALUE, fitness_function=given_fitness_function)
-evolution_algorithm = EvolutionaryAlgorithm(population, population.num_epochs, crossing_rate=CROSSING_RATE, mutation_rate=MUTATION_RATE, min_value=MIN_VALUE, max_value=MAX_VALUE)
+evolution_algorithm = EvolutionaryAlgorithm(population, population.num_epochs, crossing_rate=CROSSING_RATE, mutation_rate=MUTATION_RATE, min_value=MIN_VALUE, max_value=MAX_VALUE, fitness_function=given_fitness_function)
 fitness_per_epoch, best_organism = evolution_algorithm.run_evolution()
 for i, fitness in enumerate(fitness_per_epoch):
     formatted_epoch = f"{i + 1:02}"

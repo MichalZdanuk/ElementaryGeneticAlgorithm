@@ -1,7 +1,8 @@
 class Organism:
-    def __init__(self, value, max_value):
+    def __init__(self, value, max_value, fitness_function):
         self.value = value
         self.max_value = max_value
+        self.fitness_function = fitness_function
 
     @property
     def chromosome_binary(self):
@@ -16,3 +17,6 @@ class Organism:
 
     def __str__(self):
         return f"Organism value: {self.value}, binary: {self.chromosome_binary}"
+
+    def calculate_fitness(self):
+        return self.fitness_function(self.value)
